@@ -82,12 +82,13 @@ def GetNearestLocationsDF(latitude,longitude,n=None):
             i = i+1
     specified_column = 'id'
     locations_DF.drop_duplicates(subset=specified_column,keep='first',inplace=True)
+    locations_DF.to_csv('Data\locations.csv')
     return locations_DF
 
 #################################################################################################################
 ### Variables
 
-postal_code = "N2L 6G8"
+postal_code = "ANA NAN"
 
 #################################################################################################################
 ### Main Code
@@ -95,9 +96,10 @@ postal_code = "N2L 6G8"
 if __name__ == "__main__":
     start_time = time.time()
     latitude,longitude = GetCoordinatesFromPostalCode(postal_code)
-    print(latitude,longitude)
+    #print(latitude,longitude)
+    latitude = 0
+    longitude = 0
     locations_DF = GetNearestLocationsDF(latitude,longitude)
-    locations_DF.to_csv('temp.csv')
     end_time = time.time()
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time} seconds")
