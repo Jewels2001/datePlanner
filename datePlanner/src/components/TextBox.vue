@@ -13,8 +13,6 @@ const place = ref('')
 
 </script>
 
-</script>
-
 <template>
     <div>
         <!-- <p>Message is: {{ message }}</p> -->
