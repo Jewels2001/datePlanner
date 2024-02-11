@@ -10,7 +10,9 @@ import TheWelcome from './components/TheWelcome.vue'
   </header>
 
   <main>
-    <TheWelcome />
+    <div class="main">
+      <TheWelcome />
+    </div>
   </main>
 </template>
 
@@ -24,6 +26,11 @@ header {
 .logo {
   display: block;
   margin: 0 auto 2rem;
+}
+
+.main {
+  margin: auto;
+  /* align-content: center; */
 }
 
 </style>
