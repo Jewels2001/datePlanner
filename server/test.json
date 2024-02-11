@@ -1,14 +1,14 @@
-{"data": {
+{"data": [
     "location":"Waterloo",
     "price":"2",
-    "places":{
+    "places": [
         "a":"1",
         "b":"2",
         "c":"3"
-    },
-    "prices":{
+    ],
+    "prices":[
         "a":1,
         "b":2,
         "c":3
-    }
-}}
+    ]
+]}

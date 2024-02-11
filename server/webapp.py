@@ -6,7 +6,8 @@ from urllib.parse import parse_qsl, urlparse
 
 hostName = "localhost"
 serverPort = 8000
-path = "/test.json"
+# path = open("Jello.json", "w") as json_file:
+#     json.dump(object_to_be_saved, json_file)
 
 class WebRequestHandler(BaseHTTPRequestHandler):
     @cached_property
@@ -43,6 +44,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
 
     # Returns this information to the user
     def get_response(self):
+        # print(json.load(open(path)))
         a = {
                 "path": self.url.path,
                 "query_data": self.query_data,
@@ -52,11 +54,11 @@ class WebRequestHandler(BaseHTTPRequestHandler):
                     name: cookie.value
                     for name, cookie in self.cookies.items()
                 },
+                # "message": open(path)
             }
-        b = json.loads(path)
-        merged_dict = {key: value for (key, value) in (a.items() + b.items())}
+        # print(json.load(path))
 
-        return json.dumps(merged_dict)
+        return json.dumps(a)
 
 if __name__ == "__main__":
     server = HTTPServer((hostName, serverPort), WebRequestHandler)
