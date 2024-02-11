@@ -1,5 +1,7 @@
-import requests
 from geopy.geocoders import Nominatim
+import requests
+import pandas as pd
+import time
 
 #################################################################################################################
 ### Other Functions
@@ -9,67 +11,95 @@ def GetCoordinatesFromPostalCode(postal_code):
     location = geolocator.geocode(postal_code)
     return location.latitude,location.longitude
 
-def get_nearest_restaurants(client_id, client_secret, latitude, longitude, radius=1000, category='food', price_range=None):
-    base_url = 'https://api.foursquare.com/v3/venues/explore'
-
-    params = {
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'v': '20220210',  # Use the current date in YYYYMMDD format
-        'll': f'{latitude},{longitude}',
-        'radius': radius,
-        'section': category,
-        'limit': 5  # Limit the number of results, adjust as needed
+def GetNearestLocationsDF(latitude,longitude,n=None):
+    api_key = "vuSSTtEtm-SgqmrtPvRos5PfyME0ngKs9dyNOWw9xFP2L6JIVE2224Dt2NvdvaQ40z7sbiqwMBSJlCXBVKRH1QAqT4bkFubnURqROXYEJbgW5WuTq6gPTRrpRLXIZXYx" 
+    list_of_location_types_DICT = {
+        "Restaurants": ["restaurants", "food", "dining", "cuisine", "eateries", "diners", "bistros"],
+        "Bars": ["bars", "pubs", "lounges", "cocktail bars", "wine bars", "beer bars"],
+        "Coffee & Tea": ["coffee", "tea", "cafes", "coffee shops", "tea houses", "espresso bars"],
+        "Hotels": ["hotels", "motels", "lodging", "accommodation", "bed and breakfast", "inns"],
+        "Shopping": ["shopping", "stores", "retail", "malls", "shopping centers", "boutiques"],
+        "Nightlife": ["nightlife", "clubs", "nightclubs", "music venues", "bars and clubs", "dancing"],
+        "Beauty & Spas": ["beauty", "spa", "salon", "wellness", "massage", "hair salon"],
+        "Fitness & Recreation": ["fitness", "gyms", "fitness centers", "yoga studios", "parks", "recreation"],
+        "Arts & Entertainment": ["arts", "entertainment", "museums", "theaters", "galleries", "cinemas"],
     }
-
-    if price_range is not None:
-        params['price'] = price_range
-
-    response = requests.get(base_url, params=params)
-    print(response.json())
-    groups = response.json()['response'].get('groups', [])
-
-    items = groups[0].get('items', [])
+    i = -1
+    endpoint = "https://api.yelp.com/v3/businesses/search"
     
-    restaurants_info = []
-
-    for result in items:
-        venue = result.get('venue', {})
-        restaurant_name = venue.get('name', 'N/A')
-        restaurant_address = venue.get('location', {}).get('address', 'N/A')
-        restaurant_categories = [cat['name'] for cat in venue.get('categories', [])]
-        price_tier = venue.get('price', {}).get('tier', 'N/A')
-
-        restaurants_info.append({
-            'name': restaurant_name,
-            'address': restaurant_address,
-            'categories': restaurant_categories,
-            'price_tier': price_tier
-        })
-
-    return restaurants_info
+    headers = {
+        "Authorization": f"Bearer {api_key}"
+    }
+    
+    for category,keywords in list_of_location_types_DICT.items():    
+        j = 0
+        limit1 = 50
+        for keyword in keywords:
+            
+            params = {
+                "latitude": latitude,
+                "longitude": longitude,
+                "term": keyword,
+                "limit": limit1,
+                "sort_by": "distance"
+            }
+            
+            response = requests.get(endpoint,headers=headers,params=params)
+            data = response.json()
+            
+            businesses = data['businesses']
+            if not businesses:
+                continue
+            if n != None:
+                businesses = businesses[:n]
+            if i == -1 and j == 0:
+                full_column_list = ['Category','Subcategory']
+                column_list = list(businesses[0].keys())
+                full_column_list.extend(column_list)
+                locations_DF = pd.DataFrame(columns=full_column_list)
+                i = 0
+            temp_locations_DF = pd.DataFrame([[None]*len(full_column_list) for _ in range(len(businesses))], columns=full_column_list)
+            temp_locations_DF.loc[:len(businesses) - 1, 'Category'] = category
+            temp_locations_DF.loc[:len(businesses) - 1, 'Subcategory'] = keyword
+            
+            if 'price' not in list(businesses[0].keys()):
+                position_to_add_price = 11
+                first_dict = businesses[0]
+                keys = list(first_dict.keys())
+                values = list(first_dict.values())
+                new_businesses = {}
+                for i, (key, value) in enumerate(zip(keys, values)):
+                    new_businesses[key] = value
+                    if i == position_to_add_price - 1:
+                        new_businesses['price'] = None
+                businesses[0] = new_businesses
+            businesses_df = pd.DataFrame(businesses)
+            businesses_df = businesses_df[column_list]
+            temp_locations_DF.loc[:len(businesses) - 1, column_list] = businesses_df
+            locations_DF = pd.concat([locations_DF, temp_locations_DF], axis=0, ignore_index=True)
+            j = j + 1
+        if i >= 0:
+            i = i+1
+    specified_column = 'id'
+    locations_DF.drop_duplicates(subset=specified_column,keep='first',inplace=True)
+    return locations_DF
 
 #################################################################################################################
 ### Variables
 
 postal_code = "N2L 6G8"
-client_id = '04YZWOZ5RLXDGNB5BR20VCFP3EN4LSFXHBXWWUPQEOJPOLSY'
-client_secret = 'T33MW5OCMWVOT5HFRSBSK2PJNVLOV1O24HYFHY42O2O211RV'
-api_key = 'fsq3kN13s6mmzScl3ZZWcQvppENcv6j2MEshGfdsnOOi/BY='
 
 #################################################################################################################
 ### Main Code
 
 if __name__ == "__main__":
+    start_time = time.time()
     latitude,longitude = GetCoordinatesFromPostalCode(postal_code)
     print(latitude,longitude)
-    nearest_restaurants = get_nearest_restaurants(client_id, client_secret, latitude, longitude)
-
-    for restaurant in nearest_restaurants:
-        print(f"Name: {restaurant['name']}")
-        print(f"Address: {restaurant['address']}")
-        print(f"Categories: {', '.join(restaurant['categories'])}")
-        print(f"Price Tier: {restaurant['price_tier']}")
-        print("--------------")
+    locations_DF = GetNearestLocationsDF(latitude,longitude)
+    locations_DF.to_csv('temp.csv')
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
         
         
