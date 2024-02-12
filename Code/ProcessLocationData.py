@@ -4,7 +4,9 @@ import time
 #################################################################################################################
 ### Other Functions
 
-def ProcessLocationDF(price=None):
+def ProcessLocationDF(style,price=None):
+    #style_options = ['Casual','Romantic','Fun','Adventurous']
+    
     locations_DF = pd.read_csv('Data\locations.csv')
     if price is not None:
         excluded_subcategories = list(set(locations_DF['Subcategory'].tolist()))
