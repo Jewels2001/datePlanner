@@ -15,6 +15,15 @@ const placeType = ref([])
 var arr = []
 
 // let examplesDropdown = ref('');
+function download(content, fileName, contentType) {
+  var a = document.createElement("a");
+  var file = new Blob([content], { type: contentType });
+  a.href = URL.createObjectURL(file);
+  a.download = fileName;
+  a.click();
+}
+
+
 
 function send() {
   let m1 = `${message1.value}`
@@ -28,6 +37,7 @@ function send() {
   const data = JSON.stringify(this.arr)
   window.localStorage.setItem('arr', data);
   console.log(JSON.parse(window.localStorage.getItem('arr')))
+  download(data, 'json.txt', 'text/plain');
    
 }
 
